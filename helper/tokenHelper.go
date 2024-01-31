@@ -1,24 +1,38 @@
 package helper
 
 import (
-	"log"
+	// "fmt"
+	// "log"
 	"time"
 
 	"github.com/adasarpan404/roomies-be/environment"
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type Claims struct {
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
+	Email     string `json:"email"`
+	ID        string `json:"id"`
+	jwt.RegisteredClaims
+}
+
 func GenerateToken(email string, firstName string, lastName string, id string) (string, error) {
-	token := jwt.New(jwt.SigningMethodEdDSA)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(10 * time.Minute)
-	claims["email"] = email
-	claims["firstName"] = firstName
-	claims["lastName"] = lastName
-	claims["id"] = id
-	tokenString, err := token.SignedString(environment.SECRET_KEY)
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &Claims{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		ID:        id,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString([]byte(environment.SECRET_KEY))
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
 	return tokenString, nil
 }

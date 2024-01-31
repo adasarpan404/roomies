@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -21,7 +22,7 @@ var userCollection *mongo.Collection = db.OpenCollection(db.Client, "user")
 var validate = validator.New()
 
 func HashPassword(password string) string {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -32,6 +33,7 @@ func Signup() gin.HandlerFunc {
 		var ctx, cancel = context.WithTimeout(context.TODO(), 100*time.Second)
 		var user model.User
 		if err := c.BindJSON(&user); err != nil {
+			fmt.Print(user)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 		validationErr := validate.Struct(user)
@@ -47,14 +49,19 @@ func Signup() gin.HandlerFunc {
 		}
 
 		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "this email or phone number already exists"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "this email alreay exists"})
+			return
 		}
 		password := HashPassword(*user.Password)
 		user.Password = &password
 		user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.ID = primitive.NewObjectID()
-		token, _ := helper.GenerateToken(*user.Email, *user.FirstName, *user.LastName, user.ID.Hex())
+		token, err := helper.GenerateToken(*user.Email, *user.FirstName, *user.LastName, user.ID.Hex())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		userObj, err := userCollection.InsertOne(ctx, user)
 		if err != nil {
 			msg := "User item was not created"
