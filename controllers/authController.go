@@ -28,6 +28,18 @@ func HashPassword(password string) string {
 	}
 	return string(bytes)
 }
+
+func verifyPassword(providedPassword string, userPassword string) (bool, string) {
+	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
+	check := true
+	msg := ""
+	if err != nil {
+		check = false
+		msg = "password is incorrect"
+	}
+	return check, msg
+}
+
 func Signup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.TODO(), 100*time.Second)
@@ -71,5 +83,40 @@ func Signup() gin.HandlerFunc {
 		defer cancel()
 
 		c.JSON(http.StatusCreated, gin.H{"user": userObj, "token": token})
+	}
+}
+
+func Login() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.TODO(), 100*time.Second)
+		var user, foundUser model.User
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		// validationErr := validate.Struct(user)
+		// if validationErr != nil {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		// }
+		err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&foundUser)
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "email is incorrect"})
+			return
+		}
+		passwordIsValid, msg := verifyPassword(*foundUser.Password, *user.Password)
+		defer cancel()
+		if !passwordIsValid {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		if foundUser.Email == nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+			return
+		}
+		token, err := helper.GenerateToken(*foundUser.Email, *foundUser.FirstName, *foundUser.LastName, foundUser.ID.Hex())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		c.JSON(http.StatusOK, gin.H{"user": foundUser, "token": token})
 	}
 }
