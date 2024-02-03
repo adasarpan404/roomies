@@ -8,11 +8,20 @@ import (
 
 	"github.com/adasarpan404/roomies-be/model"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetRooms() gin.HandlerFunc {
-	return func(c *gin.Context) {}
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.TODO(), 100*time.Second)
+		cursor, err := roomCollection.Find(ctx, bson.M{})
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
 }
 
 func UpdateRoom() gin.HandlerFunc {
