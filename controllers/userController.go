@@ -15,25 +15,22 @@ import (
 
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Retrieve user ID from context
-		userId, ok := c.Get("_id")
+
+		userId, ok := c.Get("userId")
 		if !ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
 			return
 		}
 
-		// Convert user ID to ObjectID
 		objectUserId, err := primitive.ObjectIDFromHex(fmt.Sprint(userId))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
 			return
 		}
 
-		// Create a context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		defer cancel() // Ensure cancel is called to release resources
+		defer cancel()
 
-		// Retrieve user from the database
 		var user model.User
 		projection := bson.M{"password": 0}
 		err = userCollection.FindOne(ctx, bson.M{"_id": objectUserId}, options.FindOne().SetProjection(projection)).Decode(&user)
@@ -42,7 +39,6 @@ func GetUser() gin.HandlerFunc {
 			return
 		}
 
-		// Return user in the response
 		c.JSON(http.StatusOK, user)
 	}
 }

@@ -2,24 +2,19 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/adasarpan404/roomies-be/db"
 	"github.com/adasarpan404/roomies-be/helper"
 	"github.com/adasarpan404/roomies-be/model"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var userCollection *mongo.Collection = db.OpenCollection(db.Client, "user")
-var validate = validator.New()
+// var userCollection *mongo.Collection = db.OpenCollection(db.Client, "user")
 
 func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
@@ -45,7 +40,6 @@ func Signup() gin.HandlerFunc {
 		var ctx, cancel = context.WithTimeout(context.TODO(), 100*time.Second)
 		var user model.User
 		if err := c.BindJSON(&user); err != nil {
-			fmt.Print(user)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 		validationErr := validate.Struct(user)
@@ -134,7 +128,7 @@ func Authenticate() gin.HandlerFunc {
 		c.Set("email", claims.Email)
 		c.Set("firstName", claims.FirstName)
 		c.Set("lastName", claims.LastName)
-		c.Set("_id", claims.ID)
+		c.Set("userId", claims.ID)
 		c.Next()
 	}
 }

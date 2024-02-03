@@ -8,7 +8,7 @@ import (
 
 type Room struct {
 	ID         primitive.ObjectID   `bson:"_id,omitempty"`
-	User       primitive.ObjectID   `bson:"user" validate:"required"`
+	User       primitive.ObjectID   `bson:"user"`
 	Title      *string              `bson:"title" validate:"required"`
 	Address    *string              `bson:"address" validate:"required"`
 	CreatedAt  time.Time            `bson:"createdAt"`

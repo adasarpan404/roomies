@@ -14,5 +14,6 @@ func main() {
 	routes.AuthRoutes(router)
 	router.Use(controllers.Authenticate())
 	routes.UserRoutes(router)
+	routes.RoomRoutes(router)
 	router.Run(":" + environment.PORT)
 }
