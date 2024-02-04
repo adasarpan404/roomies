@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/adasarpan404/roomies-be/helper"
@@ -113,7 +114,9 @@ func Login() gin.HandlerFunc {
 
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		clientToken := c.Request.Header.Get("token")
+		bearerToken := c.Request.Header.Get("Authorization")
+		res := strings.Split(bearerToken, " ")
+		clientToken := res[1]
 		if clientToken == "" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No Authentication Header Provided"})
 			c.Abort()

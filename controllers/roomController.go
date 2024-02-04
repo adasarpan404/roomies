@@ -21,6 +21,12 @@ func GetRooms() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		var results []model.Room
+		if err := cursor.All(ctx, &results); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": results})
 	}
 }
 
