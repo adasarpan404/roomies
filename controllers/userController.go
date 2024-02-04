@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/adasarpan404/roomies-be/helper"
 	"github.com/adasarpan404/roomies-be/model"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,13 +19,14 @@ func GetUser() gin.HandlerFunc {
 
 		userId, ok := c.Get("userId")
 		if !ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+			helper.ErrorResponse(c, http.StatusBadRequest, "User ID not found in context")
+
 			return
 		}
 
 		objectUserId, err := primitive.ObjectIDFromHex(fmt.Sprint(userId))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+			helper.ErrorResponse(c, http.StatusBadRequest, "Invalid user ID format")
 			return
 		}
 
@@ -35,7 +37,7 @@ func GetUser() gin.HandlerFunc {
 		projection := bson.M{"password": 0}
 		err = userCollection.FindOne(ctx, bson.M{"_id": objectUserId}, options.FindOne().SetProjection(projection)).Decode(&user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			helper.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 
